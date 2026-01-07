@@ -12,7 +12,7 @@ typedef struct s_map
 	int		width;
 	int		height;
 	int		collectibles;
-	int		exists;
+	int		exits;
 	int		players;
 	int		player_x;
 	int		player_y;
