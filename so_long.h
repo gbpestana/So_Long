@@ -37,7 +37,7 @@ int	check_path(t_map *map);
 
 void	free_map(t_map *map);
 void	print_error(char *message);
-int		ft_strlen(char *str);
-char	*ft_strdup(char *str);
+int		ft_strlen(char *s);
+char	*ft_strdup(char *s);
 
 #endif

@@ -6,16 +6,25 @@ static int count_lines(char *filename)
     int		lines;
     char	buffer[1];
     int		bytes;
+	int		last_was_newline;
 
 	fd = open(filename, O_RDONLY);
 	if (fd < 0)
 		return (-1);
 	lines = 0;
+	last_was_newline = 0;
 	while ((bytes = read(fd, buffer, 1)) > 0)
 	{
 		if (buffer[0] == '\n')
+		{
 			lines++;
+			last_was_newline = 1;
+		}
+		else 
+			last_was_newline = 0;
 	}
+	if (!last_was_newline && lines > 0)
+		lines++;
 	close(fd);
 	return (lines);
 }
@@ -30,9 +39,11 @@ static char *read_line(int fd)
 	i = 0;
 	while ((bytes = read(fd, &c, 1)) > 0)
 	{
-		if (c == '\n')
+		if (c == '\n' || c == '\r')
 			break;
 		buffer[i++] = c;
+		if (i >= 9999)
+			break;
 	}
 	if (bytes <= 0 && i == 0)
 		return (NULL);

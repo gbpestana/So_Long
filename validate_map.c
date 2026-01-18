@@ -20,7 +20,7 @@ int	parse_map(char *filename, t_game *game)
 		print_error("Error: Failed to read map file");
 		return (0);
 	}
-	if (!invalidate_map(&game->map))
+	if (!validate_map(&game->map))
 	{
 		free_map(&game->map);
 		return (0);

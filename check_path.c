@@ -5,6 +5,8 @@ static char **copy_map(t_map *map)
 	char	**copy;
 	int		i;
 
+	if (!map || !map->grid[i])
+		return (NULL);
 	copy = (char **)malloc(sizeof(char *) * (map->height + 1));
 	if (!copy)
 		return (NULL);
@@ -13,7 +15,12 @@ static char **copy_map(t_map *map)
 	{
 		copy[i] = ft_strdup(map->grid[i]);
 		if (!copy[i])
+		{
+			while (--i >= 0)
+				free(copy[i]);
+			free(copy);
 			return (NULL);
+		}
 		i++;
 	}
 	copy[i] = NULL;
@@ -67,7 +74,7 @@ int	check_path(t_map *map)
 	y = 0;
 	while (y < map->height)
 	{
-		while (x < map-> width)
+		while (x < map->width)
 		{
 			if (map->grid[y][x] == 'C' && map_copy[y][x] == 'V')
 				reachable_c++;
