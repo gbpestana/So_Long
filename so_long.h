@@ -5,14 +5,20 @@
 # include <fcntl.h>
 # include <unistd.h>
 # include <stdio.h>
+# include <mlx.h>
+# include "libft.h"
 
 # define KEY_ESC   65307
 # define KEY_W     119
 # define KEY_A     97
 # define KEY_S     115
 # define KEY_D     100
+# define KEY_UP     65362
+# define KEY_LEFT   65361
+# define KEY_DOWN   65364
+# define KEY_RIGHT  65363
 
-# define TILE_SIZE 64
+# define TILE_SIZE 16
 
 # define COLOR_WALL  0x444444
 # define COLOR_FLOOR 0xDDDDDD
@@ -51,8 +57,9 @@ int	check_path(t_map *map);
 
 void	free_map(t_map *map);
 void	print_error(char *message);
-int		ft_strlen(char *s);
-char	*ft_strdup(char *s);
+// int		ft_strlen(char *s);
+// char	*ft_strdup(char *s);
+// char	*ft_itoa(int n);
 
 void	init_game(t_game *game);
 int		handle_input(t_game *game);

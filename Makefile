@@ -1,47 +1,40 @@
-NAME = so_long_test
+NAME = so_long
 
 CC = cc
 CFLAGS = -Wall -Werror -Wextra -g
+
+LIBFT_DIR = libft
+LIBFT = $(LIBFT_DIR)/libft.a
+
+MLX_DIR = minilibx-linux
+MLX = $(MLX_DIR)/libmlx.a
 
 SRCS = $(wildcard *.c)
 
 OBJS = $(SRCS:.c=.o)
 
+INCLUDES = -I$(MLX_DIR) -I$(LIBFT_DIR)
+
+MLX_FLAGS = -L$(MLX_DIR) -lmlx -lXext -lX11 -lm
+
 all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(NAME)
+	@make -C $(LIBFT_DIR)
+	@make -C $(MLX_DIR)
+	$(CC) $(CFLAGS) $(OBJS) $(MLX_FLAGS) $(LIBFT) -o $(NAME)
 
 %.o: %.c so_long.h
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	rm -f $(OBJS)
+	@make -C $(LIBFT_DIR) clean
 
 fclean: clean
 	rm -f $(NAME)
+	@make -C $(LIBFT_DIR) fclean
 
 re: fclean all
-
-test: $(NAME)
-	@echo "\n========== TESTING VALID MAPS =========="
-	@echo "\n--- Test 1: Easy Small Map ---"
-	./$(NAME) maps/map_easy_small.ber
-	@echo "\n--- Test 2: Easy Large Map ---"
-	./$(NAME) maps/map_easy_large.ber
-	@echo "\n--- Test 3: Hard Maze ---"
-	./$(NAME) maps/map_hard_maze.ber
-	@echo "\n--- Test 4: Hard Spiral ---"
-	./$(NAME) maps/map_hard_spiral.ber
-	@echo "\n--- Test 5: Hard Rooms ---"
-	./$(NAME) maps/map_hard_rooms.ber
-	@echo "\n\n========== TESTING INVALID MAPS =========="
-	@echo "\n--- Test 6: No Exit (should FAIL) ---"
-	-./$(NAME) maps/map_invalid_no_exit.ber
-	@echo "\n--- Test 7: Not Rectangular (should FAIL) ---"
-	-./$(NAME) maps/map_invalid_not_rectangular.ber
-	@echo "\n--- Test 8: No Valid Path (should FAIL) ---"
-	-./$(NAME) maps/map_invalid_no_path.ber
-	@echo "\n\n========== ALL TESTS COMPLETED =========="
 
 .PHONY: all clean fclean re test
