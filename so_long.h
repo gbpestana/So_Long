@@ -38,37 +38,45 @@ typedef struct s_map
 	int		player_y;
 }	t_map;
 
+typedef struct s_img
+{
+	void	*img;
+	char	*addr;
+	int		bpp;
+	int		line_len;
+	int		endian;
+}	t_img;
+
 typedef struct s_game
 {
 	t_map	map;
 	void	*mlx;
 	void	*win;
+	t_img	img;
 	int		collected;
 	int		moves;
 }	t_game;
 
-int	parse_map(char *filename, t_game *game);
-int	read_map(char *filename, t_map *map);
-int	validate_map(t_map *map);
-int	check_rectangular(t_map *map);
-int	check_walls(t_map *map);
-int	check_components(t_map *map);
-int	check_path(t_map *map);
+int		parse_map(char *filename, t_game *game);
+int		read_map(char *filename, t_map *map);
+int		validate_map(t_map *map);
+int		check_rectangular(t_map *map);
+int		check_walls(t_map *map);
+int		check_components(t_map *map);
+int		check_path(t_map *map);
 
 void	free_map(t_map *map);
 void	print_error(char *message);
-// int		ft_strlen(char *s);
-// char	*ft_strdup(char *s);
-// char	*ft_itoa(int n);
 
 void	init_game(t_game *game);
 int		handle_input(t_game *game);
 void	try_move(t_game *g, int dx, int dy);
-int	handle_keypress(int keycode, t_game *game);
-int	handle_close(t_game *game);
+int		handle_keypress(int keycode, t_game *game);
+int		handle_close(t_game *game);
 
 void	draw_square(t_game *game, int x, int y, int color);
 void	render_map(t_game *game);
 void	render_moves(t_game *g);
+void	put_pixel(t_img *img, int x, int y, int color);
 
 #endif

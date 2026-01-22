@@ -1,0 +1,109 @@
+#include "so_long.h"
+
+#include "so_long.h"
+
+static int	can_move(t_game *g, int x, int y)
+{
+	char	target;
+
+	if (x < 0 || y < 0
+		|| x >= g->map.width || y >= g->map.height)
+		return (0);
+	target = g->map.grid[y][x];
+	if (target == '1')
+		return (0);
+	if (target == 'E' && g->collected < g->map.collectibles)
+		return (0);
+	return (1);
+}
+
+static void	update_player_position(t_game *g, int x, int y, char target)
+{
+	if (g->map.grid[g->map.player_y][g->map.player_x] != 'E')
+		g->map.grid[g->map.player_y][g->map.player_x] = '0';
+	if (target != 'E')
+		g->map.grid[y][x] = 'P';
+	g->map.player_x = x;
+	g->map.player_y = y;
+}
+
+static void	print_moves(t_game *g)
+{
+	write(1, "Moves: ", 7);
+	ft_putnbr_fd(g->moves, 1);
+	write(1, "\n", 1);
+}
+
+void	try_move(t_game *g, int dx, int dy)
+{
+	int		x;
+	int		y;
+	char	target;
+
+	x = g->map.player_x + dx;
+	y = g->map.player_y + dy;
+	if (!can_move(g, x, y))
+		return ;
+	target = g->map.grid[y][x];
+	if (target == 'C')
+		g->collected++;
+	update_player_position(g, x, y, target);
+	g->moves++;
+	print_moves(g);
+	if (target == 'E' && g->collected == g->map.collectibles)
+	{
+		write(1, "You win!\n", 9);
+		mlx_destroy_window(g->mlx, g->win);
+		free_map(&g->map);
+		exit(0);
+	}
+}
+
+// void	try_move(t_game *g, int dx, int dy)
+// {
+// 	int		new_x;
+// 	int		new_y;
+// 	char	target;
+
+// 	new_x = g->map.player_x + dx;
+// 	new_y = g->map.player_y + dy;
+
+// 	if (new_x < 0 || new_y < 0
+// 		|| new_x >= g->map.width || new_y >= g->map.height)
+// 		return ;
+
+// 	target = g->map.grid[new_y][new_x];
+
+// 	if (target == '1')
+// 		return ;
+
+// 	if (target == 'E' && g->collected < g->map.collectibles)
+// 		return ;
+
+// 	if (target == 'C')
+// 		g->collected++;
+
+// 	/* limpa posição antiga */
+// 	if (g->map.grid[g->map.player_y][g->map.player_x] != 'E')
+// 		g->map.grid[g->map.player_y][g->map.player_x] = '0';
+
+// 	/* move player */
+// 	if (target != 'E')
+// 		g->map.grid[new_y][new_x] = 'P';
+
+// 	g->map.player_x = new_x;
+// 	g->map.player_y = new_y;
+// 	g->moves++;
+
+// 	write(1, "Moves: ", 7);
+// 	ft_putnbr_fd(g->moves, 1);
+// 	write(1, "\n", 1);
+
+// 	if (target == 'E' && g->collected == g->map.collectibles)
+// 	{
+// 		write(1, "You win!\n", 9);
+// 		mlx_destroy_window(g->mlx, g->win);
+// 		free_map(&g->map);
+// 		exit(0);
+// 	}
+// }

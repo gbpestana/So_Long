@@ -1,5 +1,12 @@
 #include "so_long.h"
 
+void	exit_game(t_game *g)
+{
+	mlx_destroy_window(g->mlx, g->win);
+	free_map(&g->map);
+	exit(0);
+}
+
 int	handle_keypress(int keycode, t_game *g)
 {
 	if (keycode == KEY_W || keycode == KEY_UP)
@@ -11,18 +18,13 @@ int	handle_keypress(int keycode, t_game *g)
 	else if (keycode == KEY_D || keycode == KEY_RIGHT)
 		try_move(g, 1, 0);
 	else if (keycode == KEY_ESC)
-	{
-		mlx_destroy_window(g->mlx, g->win);
-		free_map(&g->map);
-		exit(0);
-	}
+		exit_game(g);
 	render_map(g);
 	return (0);
 }
 
-int	handle_close(t_game *game)
+int	handle_close(t_game *g)
 {
-	mlx_destroy_window(game->mlx, game->win);
-	free_map(&game->map);
-	exit(0);
+	exit_game(g);
+	return (0);
 }
