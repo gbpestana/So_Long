@@ -11,6 +11,11 @@ int	check_components(t_map *map)
 	y = 0;
 	while (y < map->height)
 	{
+		if ((int)ft_strlen(map->grid[y]) != map->width)
+		{
+			print_error("Error: Map is not rectangular");
+			return (0);
+		}
 		x = 0;
 		while (x < map->width)
 		{

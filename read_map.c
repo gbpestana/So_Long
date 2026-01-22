@@ -29,6 +29,7 @@ static int count_lines(char *filename)
 	return (lines);
 }
 
+
 static char *read_line(int fd)
 {
 	char	buffer[10000];

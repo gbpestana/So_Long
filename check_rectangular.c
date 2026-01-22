@@ -11,6 +11,11 @@ int check_rectangular(t_map *map)
 	while (i < map->height)
 	{
 		len = ft_strlen(map->grid[i]);
+		if (len == 0)
+		{
+			print_error("Error: Empty line in map");
+			return (0);
+		}
 		if (len != map->width)
 		{
 			print_error("Error: Map is not rectangular");
