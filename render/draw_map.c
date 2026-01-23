@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   draw_map.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/23 15:26:57 by grodrig2          #+#    #+#             */
+/*   Updated: 2026/01/23 15:43:45 by grodrig2         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
 void	draw_square(t_game *g, int x, int y, int color)
@@ -11,12 +23,7 @@ void	draw_square(t_game *g, int x, int y, int color)
 		j = 0;
 		while (j < TILE_SIZE)
 		{
-			put_pixel(
-				&g->img,
-				x * TILE_SIZE + j,
-				y * TILE_SIZE + i,
-				color
-			);
+			put_pixel(&g->img, x * TILE_SIZE + j, y * TILE_SIZE + i, color);
 			j++;
 		}
 		i++;

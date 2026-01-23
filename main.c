@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/23 15:27:07 by grodrig2          #+#    #+#             */
+/*   Updated: 2026/01/23 15:46:14 by grodrig2         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
 void	print_map(t_map *map)
@@ -8,7 +20,7 @@ void	print_map(t_map *map)
 	if (!map || !map->grid)
 	{
 		printf("Error: Invalid map structure\n");
-		return;
+		return ;
 	}
 	while (i < map->height && map->grid[i])
 	{
@@ -38,13 +50,12 @@ int	main(int argc, char **argv)
 		return (1);
 	}
 	game.mlx = mlx_init();
-	game.win = mlx_new_window(game.mlx, game.map.width * TILE_SIZE, 
-		game.map.height * TILE_SIZE, "so_long");
+	game.win = mlx_new_window(game.mlx, game.map.width * TILE_SIZE,
+			game.map.height * TILE_SIZE, "so_long");
 	game.img.img = mlx_new_image(game.mlx, game.map.width * TILE_SIZE,
-		 game.map.height * TILE_SIZE);
-	game.img.addr = mlx_get_data_addr(game.img.img, &game.img.bpp, 
-		&game.img.line_len, &game.img.endian);
-
+			game.map.height * TILE_SIZE);
+	game.img.addr = mlx_get_data_addr(game.img.img, &game.img.bpp,
+			&game.img.line_len, &game.img.endian);
 	render_map(&game);
 	mlx_key_hook(game.win, handle_keypress, &game);
 	mlx_hook(game.win, 17, 0, handle_close, &game);

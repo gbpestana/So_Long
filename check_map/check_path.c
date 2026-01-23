@@ -1,58 +1,68 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   check_path.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/23 15:26:00 by grodrig2          #+#    #+#             */
+/*   Updated: 2026/01/23 15:38:38 by grodrig2         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
-static char **copy_map(t_map *map)
+static char	**copy_map(t_map *map)
 {
-    char    **copy;
-    int     i;
+	char	**copy;
+	int		i;
 
-    if (!map || !map->grid)
-        return (NULL);
-
-    copy = (char **)malloc(sizeof(char *) * (map->height + 1));
-    if (!copy)
-        return (NULL);
-    
-    i = 0;
-    while (i < map->height)
-    {
-        copy[i] = ft_strdup(map->grid[i]);
-        if (!copy[i])
-        {
-            while (--i >= 0)
-                free(copy[i]);
-            free(copy);
-            return (NULL);
-        }
-        i++;
-    }
-    copy[i] = NULL;
-    return (copy);
+	if (!map || !map->grid)
+		return (NULL);
+	copy = (char **)malloc(sizeof(char *) * (map->height + 1));
+	if (!copy)
+		return (NULL);
+	i = 0;
+	while (i < map->height)
+	{
+		copy[i] = ft_strdup(map->grid[i]);
+		if (!copy[i])
+		{
+			while (--i >= 0)
+				free(copy[i]);
+			free(copy);
+			return (NULL);
+		}
+		i++;
+	}
+	copy[i] = NULL;
+	return (copy);
 }
 
-static void free_copy(char **copy, int height)
+static void	free_copy(char **copy, int height)
 {
-    int i;
+	int	i;
 
-    i = 0;
-    while (i < height)
-    {
-        if (copy[i])
-            free(copy[i]);
-        i++;
-    }
-    free(copy);
+	i = 0;
+	while (i < height)
+	{
+		if (copy[i])
+			free(copy[i]);
+		i++;
+	}
+	free(copy);
 }
 
-static void flood_fill(char **map_copy, int x, int y, t_map *m)
+static void	flood_fill(char **map_copy, int x, int y, t_map *m)
 {
 	if (x < 0 || x >= m->width || y < 0 || y >= m->height)
-		return;
+		return ;
 	if (map_copy[y][x] == '1' || map_copy[y][x] == 'V')
-		return;
+		return ;
 	if (map_copy[y][x] == 'E')
 	{
 		map_copy[y][x] = 'V';
-		return;
+		return ;
 	}
 	map_copy[y][x] = 'V';
 	flood_fill(map_copy, x + 1, y, m);

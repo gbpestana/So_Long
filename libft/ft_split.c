@@ -6,18 +6,18 @@
 /*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/29 09:26:57 by grodrig2          #+#    #+#             */
-/*   Updated: 2025/08/06 13:44:43 by grodrig2         ###   ########.fr       */
+/*   Updated: 2026/01/23 15:42:29 by grodrig2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "libft.h"
 
-static char	**ft_fill_arr(char **arr, const char *str, char c, unsigned int n);
-static int	ft_word(const char *str, char c);
+static char		**ft_fill(char **arr, const char *str, char c, unsigned int n);
+static int		ft_word(const char *str, char c);
 static size_t	ft_counter_char(const char *str, char c);
-static void	ft_free(char **arr, unsigned int n);
+static void		ft_free(char **arr, unsigned int n);
 
-static char	**ft_fill_arr(char **arr, const char *str, char c, unsigned int n)
+static char	**ft_fill(char **arr, const char *str, char c, unsigned int n)
 {
 	char				*str_cpy;
 	unsigned int		i;
@@ -105,7 +105,7 @@ char	**ft_split(char const *s, char c)
 	new_arr = (char **)ft_calloc(n_words + 1, sizeof (char *));
 	if (!new_arr)
 		return (NULL);
-	if (!ft_fill_arr(new_arr, s, c, n_words))
+	if (!ft_fill(new_arr, s, c, n_words))
 		return (NULL);
 	return (new_arr);
 }

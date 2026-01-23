@@ -1,4 +1,17 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   read_map.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/23 15:26:22 by grodrig2          #+#    #+#             */
+/*   Updated: 2026/01/23 15:32:07 by grodrig2         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
+
 static int	count_lines(char *filename)
 {
 	int		fd;
@@ -34,10 +47,8 @@ static int	has_ber_extension(char *filename)
 	len = ft_strlen(filename);
 	if (len < 4)
 		return (0);
-	if (filename[len - 4] != '.' ||
-		filename[len - 3] != 'b' ||
-		filename[len - 2] != 'e' ||
-		filename[len - 1] != 'r')
+	if (filename[len - 4] != '.' || filename[len - 3] != 'b'
+		|| filename[len - 2] != 'e' || filename[len - 1] != 'r')
 		return (0);
 	return (1);
 }
@@ -52,7 +63,7 @@ static char	*read_line(int fd)
 	while (read(fd, &c, 1) > 0)
 	{
 		if (c == '\n')
-			break;
+			break ;
 		if (i < 9999)
 			buffer[i++] = c;
 	}

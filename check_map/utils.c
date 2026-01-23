@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/23 15:26:25 by grodrig2          #+#    #+#             */
+/*   Updated: 2026/01/23 15:33:35 by grodrig2         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
 void	print_error(char *message)
@@ -18,7 +30,7 @@ void	free_map(t_map *map)
 	int	i;
 
 	if (!map || !map->grid)
-		return;
+		return ;
 	i = 0;
 	while (i < map->height && map->grid[i])
 	{

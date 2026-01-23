@@ -1,9 +1,21 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   check_rectangular.c                                :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/23 15:26:06 by grodrig2          #+#    #+#             */
+/*   Updated: 2026/01/23 15:39:33 by grodrig2         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "so_long.h"
 
-int check_rectangular(t_map *map)
+int	check_rectangular(t_map *map)
 {
-    int	i;
-    int	len;
+	int	i;
+	int	len;
 
 	if (!map || !map->grid || map->height == 0)
 		return (0);
