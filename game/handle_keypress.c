@@ -12,31 +12,33 @@
 
 #include "so_long.h"
 
-void	exit_game(t_game *g)
-{
-	mlx_destroy_window(g->mlx, g->win);
-	free_map(&g->map);
-	exit(0);
-}
+
+
 
 int	handle_keypress(int keycode, t_game *g)
 {
 	if (keycode == KEY_W || keycode == KEY_UP)
-		try_move(g, 0, -1);
+		g->input.up = 1;
 	else if (keycode == KEY_S || keycode == KEY_DOWN)
-		try_move(g, 0, 1);
+		g->input.down = 1;
 	else if (keycode == KEY_A || keycode == KEY_LEFT)
-		try_move(g, -1, 0);
+		g->input.left = 1;
 	else if (keycode == KEY_D || keycode == KEY_RIGHT)
-		try_move(g, 1, 0);
+		g->input.right = 1;
 	else if (keycode == KEY_ESC)
 		exit_game(g);
-	render_map(g);
 	return (0);
 }
 
-int	handle_close(t_game *g)
+int	handle_keyrelease(int keycode, t_game *g)
 {
-	exit_game(g);
+	if (keycode == KEY_W || keycode == KEY_UP)
+		g->input.up = 0;
+	else if (keycode == KEY_S || keycode == KEY_DOWN)
+		g->input.down = 0;
+	else if (keycode == KEY_A || keycode == KEY_LEFT)
+		g->input.left = 0;
+	else if (keycode == KEY_D || keycode == KEY_RIGHT)
+		g->input.right = 0;
 	return (0);
 }

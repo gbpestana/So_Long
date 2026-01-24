@@ -29,11 +29,19 @@ void	print_map(t_map *map)
 	}
 }
 
-void	init_game(t_game *game)
+void	init_game(t_game *g)
 {
-	game->collected = 0;
-	game->moves = 0;
+	g->moves = 0;
+	g->collected = 0;
+	g->frame_count = 0;
+	g->speed = 6;
 }
+
+// void	init_game(t_game *game)
+// {
+// 	game->collected = 0;
+// 	game->moves = 0;
+// }
 
 int	main(int argc, char **argv)
 {
@@ -50,15 +58,14 @@ int	main(int argc, char **argv)
 		return (1);
 	}
 	game.mlx = mlx_init();
-	game.win = mlx_new_window(game.mlx, game.map.width * TILE_SIZE,
-			game.map.height * TILE_SIZE, "so_long");
-	game.img.img = mlx_new_image(game.mlx, game.map.width * TILE_SIZE,
-			game.map.height * TILE_SIZE);
-	game.img.addr = mlx_get_data_addr(game.img.img, &game.img.bpp,
-			&game.img.line_len, &game.img.endian);
+	game.win = mlx_new_window(game.mlx, game.map.width * TILE_SIZE, game.map.height * TILE_SIZE, "so_long");
+	load_textures(&game);
 	render_map(&game);
-	mlx_key_hook(game.win, handle_keypress, &game);
+	mlx_hook(game.win, 2, 1L << 0, handle_keypress, &game);
+	mlx_hook(game.win, 3, 1L << 1, handle_keyrelease, &game);
+	mlx_loop_hook(game.mlx, game_loop, &game);
 	mlx_hook(game.win, 17, 0, handle_close, &game);
 	mlx_loop(game.mlx);
+
 	return (0);
 }
