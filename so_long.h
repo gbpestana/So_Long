@@ -6,7 +6,7 @@
 /*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/23 15:27:12 by grodrig2          #+#    #+#             */
-/*   Updated: 2026/01/23 15:27:13 by grodrig2         ###   ########.fr       */
+/*   Updated: 2026/01/26 13:40:33 by grodrig2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,12 +31,6 @@
 # define KEY_RIGHT  65363
 
 # define TILE_SIZE 32
-
-# define COLOR_WALL  0x444444
-# define COLOR_FLOOR 0xDDDDDD
-# define COLOR_PLAYER 0x0000FF
-# define COLOR_EXIT  0x00FF00
-# define COLOR_COLLECT 0xFFD700
 
 typedef struct s_map
 {

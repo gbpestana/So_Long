@@ -6,28 +6,11 @@
 /*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/01/23 15:27:07 by grodrig2          #+#    #+#             */
-/*   Updated: 2026/01/23 15:46:14 by grodrig2         ###   ########.fr       */
+/*   Updated: 2026/01/26 11:03:48 by grodrig2         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "so_long.h"
-
-void	print_map(t_map *map)
-{
-	int	i;
-
-	i = 0;
-	if (!map || !map->grid)
-	{
-		printf("Error: Invalid map structure\n");
-		return ;
-	}
-	while (i < map->height && map->grid[i])
-	{
-		printf("%s\n", map->grid[i]);
-		i++;
-	}
-}
 
 void	init_game(t_game *g)
 {

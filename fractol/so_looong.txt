@@ -1,0 +1,1175 @@
+#ifndef SO_LONG_H
+# define SO_LONG_H
+
+# include <mlx.h>
+# include <stdlib.h>
+# include <unistd.h>
+# include <fcntl.h>
+# include <stdio.h>
+# include <mlx.h>
+# include <string.h>
+
+# define TILE_SIZE 64
+# define WIN_TITLE "so_long"
+
+typedef struct s_player
+{
+	int	x;
+	int	y;
+	int	moves;
+}	t_player;
+
+typedef struct s_counts
+{
+	int	players;
+	int	exits;
+	int	collects;
+}	t_counts;
+
+typedef struct s_flood
+{
+	char	**map;
+	int		width;
+	int		height;
+}	t_flood;
+
+typedef struct s_pathcheck
+{
+	int	px;
+	int	py;
+	int	total_collects;
+	int	found_collects;
+	int	found_exit;
+}	t_pathcheck;
+
+typedef struct s_game
+{
+	void		*mlx;
+	void		*win;
+	char		**map;
+	int			map_w;
+	int			map_h;
+	int			player_count;
+	int			exit_count;
+	int			collect_count;
+	int			player_x;
+	int			player_y;
+	int			collectibles;
+	void		*img_wall;
+	void		*img_floor;
+	void		*img_player;
+	void		*img_exit;
+	void		*img_collect;
+	t_player	player;
+}	t_game;
+
+/* ===== utils.c ===== */
+void	print_error(char *message);
+int		ft_strcmp(char *s1, char *s2);
+void	free_map(char **map);
+size_t	ft_strlen(const char *s);
+char	*ft_strchr(const char *s, int c);
+char	*ft_strdup(const char *s);
+
+/* ===== map.c ===== */
+char	**read_map_file(const char *filname);
+char	**load_map(const char *filename, t_game *game);
+int		get_map_height(char **map);
+int		get_map_width(char **map);
+
+/* ===== validate.c ===== */
+int		validate_map(t_game *game);
+
+/* ===== validate_counts.c ===== */
+int		check_counts(t_game *game);
+void	*ft_memset(void *s, int c, size_t n);
+
+/* ===== flood_fill.c ===== */
+int		validate_paths(t_game *game);
+void	ff_fill(t_flood *flood, int x, int y);
+void	find_player_and_count(char **map, int *px, int *py, int *total);
+int		count_reachable(t_game *game, char **map_cpy);
+int		check_path_result(int found, int total, int exit);
+char	**dup_map(char **map);
+
+/* ===== player.c ===== */
+int		can_move_to(t_game *game, int x, int y);
+void	move_player(t_game *game, int dx, int dy);
+
+/* ===== hooks.c ===== */
+int		handle_keypress(int keycode, t_game *game);
+int		close_game(t_game *game);
+int		expose_hook(t_game *game);
+void	setup_hooks(t_game *game);
+
+/* ===== render.c ===== */
+void	render_game(t_game *game);
+void	load_images(t_game *game);
+//void	put_tile(t_game *game, int x, int y, char c);
+void	destroy_images(t_game *game);
+
+/* ===== main.c ===== */
+void	init_game(t_game *game);
+
+#endif
+
+#include "so_long.h"
+
+void	ff_fill(t_flood *flood, int x, int y)
+{
+	if (x < 0 || y < 0 || x >= flood->width || y >= flood->height)
+		return ;
+	if (!flood->map[y] || !flood->map[y][x])
+		return ;
+	if (flood->map[y][x] == '1' || flood->map[y][x] == 'v'
+		|| flood->map[y][x] == 'E')
+		return ;
+	flood->map[y][x] = 'v';
+	ff_fill(flood, x + 1, y);
+	ff_fill(flood, x - 1, y);
+	ff_fill(flood, x, y + 1);
+	ff_fill(flood, x, y - 1);
+}
+
+char	**dup_map(char **map)
+{
+	char	**copy;
+	int		i;
+
+	i = 0;
+	while (map[i])
+		i++;
+	copy = malloc(sizeof(char *) * (i + 1));
+	if (!copy)
+		return (NULL);
+	i = 0;
+	while (map[i])
+	{
+		copy[i] = ft_strdup(map[i]);
+		if (!copy[i])
+		{
+			free_map(copy);
+			return (NULL);
+		}
+		i++;
+	}
+	copy[i] = NULL;
+	return (copy);
+}
+
+void	find_player_and_count(char **map, int *px, int *py, int *total)
+{
+	int	y;
+	int	x;
+
+	y = 0;
+	*px = -1;
+	*py = -1;
+	*total = 0;
+	while (map[y])
+	{
+		x = 0;
+		while (map[y][x])
+		{
+			if (map[y][x] == 'P')
+			{
+				*px = x;
+				*py = y;
+			}
+			else if (map[y][x] == 'C')
+				(*total)++;
+			x++;
+		}
+		y++;
+	}
+}
+
+int	count_reachable(t_game *game, char **map_cpy)
+{
+	int	y;
+	int	x;
+	int	found_collects;
+
+	y = 0;
+	found_collects = 0;
+	while (map_cpy[y])
+	{
+		x = 0;
+		while (map_cpy[y][x])
+		{
+			if (game->map[y][x] == 'C' && map_cpy[y][x] == 'v')
+				found_collects++;
+			x++;
+		}
+		y++;
+	}
+	return (found_collects);
+}
+
+int	check_path_result(int found, int total, int exit)
+{
+	if (found != total || !exit)
+	{
+		print_error("Map validation failed: unreachable items");
+		return (0);
+	}
+	return (1);
+}
+#include "so_long.h"
+
+#ifndef KEY_ESC
+# define KEY_ESC 65307
+# define KEY_UP 65362
+# define KEY_DOWN 65364
+# define KEY_LEFT 65361
+# define KEY_RIGHT 65363
+# define KEY_W 119
+# define KEY_A 97
+# define KEY_S 115
+# define KEY_D 100
+#endif
+
+int	handle_keypress(int keycode, t_game *game)
+{
+	if (!game)
+		return (0);
+	if (keycode == KEY_ESC)
+		return (close_game(game));
+	else if (keycode == KEY_W || keycode == KEY_UP)
+		move_player(game, 0, -1);
+	else if (keycode == KEY_S || keycode == KEY_DOWN)
+		move_player(game, 0, 1);
+	else if (keycode == KEY_A || keycode == KEY_LEFT)
+		move_player(game, -1, 0);
+	else if (keycode == KEY_D || keycode == KEY_RIGHT)
+		move_player(game, 1, 0);
+	return (0);
+}
+
+int	close_game(t_game *game)
+{
+	if (!game)
+		exit(0);
+	destroy_images(game);
+	if (game->win && game->mlx)
+		mlx_destroy_window(game->mlx, game->win);
+	if (game->mlx)
+	{
+		mlx_destroy_display(game->mlx);
+		free(game->mlx);
+	}
+	free_map(game->map);
+	exit(0);
+	return (0);
+}
+
+int	expose_hook(t_game *game)
+{
+	if (game && game->map)
+		render_game(game);
+	return (0);
+}
+
+void	setup_hooks(t_game *game)
+{
+	if (!game || !game->win)
+		return ;
+	mlx_hook(game->win, 2, 1L << 0, handle_keypress, game);
+	mlx_hook(game->win, 17, 0, close_game, game);
+	mlx_hook(game->win, 12, 1L << 15, expose_hook, game);
+}
+
+#include "so_long.h"
+
+void	init_game(t_game *game)
+{
+	game->mlx = NULL;
+	game->win = NULL;
+	game->map = NULL;
+	game->map_w = 0;
+	game->map_h = 0;
+	game->collectibles = 0;
+	game->player.x = 0;
+	game->player.y = 0;
+	game->player.moves = 0;
+	game->player_count = 0;
+	game->exit_count = 0;
+	game->collect_count = 0;
+	game->img_floor = NULL;
+	game->img_wall = NULL;
+	game->img_player = NULL;
+	game->img_exit = NULL;
+	game->img_collect = NULL;
+}
+
+static int	setup_game(t_game *game, char *path)
+{
+	init_game(game);
+	game->map = load_map(path, game);
+	if (!game->map)
+		return (0);
+	if (!validate_map(game))
+	{
+		free_map(game->map);
+		return (0);
+	}
+	game->mlx = mlx_init();
+	if (!game->mlx)
+	{
+		print_error("mlx_init failed");
+		free_map(game->map);
+		return (0);
+	}
+	return (1);
+}
+
+static void	start_game(t_game *game)
+{
+	game->win = mlx_new_window(game->mlx, game->map_w * TILE_SIZE,
+			game->map_h * TILE_SIZE, WIN_TITLE);
+	load_images(game);
+	render_game(game);
+	setup_hooks(game);
+	mlx_loop(game->mlx);
+	destroy_images(game);
+	free_map(game->map);
+}
+
+int	main(int argc, char **argv)
+{
+	t_game	game;
+
+	if (argc != 2)
+	{
+		print_error("Usage: ./so_long <map.ber>");
+		return (1);
+	}
+	if (!setup_game(&game, argv[1]))
+		return (1);
+	start_game(&game);
+	return (0);
+}
+#include "so_long.h"
+
+static char	*extract_line(char *buf, int start, int end)
+{
+	int		len;
+	int		i;
+	char	*line;
+
+	len = end - start;
+	line = malloc(len + 1);
+	if (!line)
+		return (NULL);
+	i = -1;
+	while (++i < len)
+		line[i] = buf[start + i];
+	line[i] = '\0';
+	return (line);
+}
+
+static int	count_lines(char *buf)
+{
+	int	i;
+	int	lines;
+
+	if (!buf)
+		return (0);
+	i = 0;
+	lines = 0;
+	while (buf[i])
+	{
+		if (buf[i] == '\n')
+			lines++;
+		i++;
+	}
+	if (i > 0 && buf[i - 1] != '\n')
+		lines++;
+	return (lines);
+}
+
+char	**split_map(char *buf)
+{
+	int		i;
+	int		start;
+	int		row;
+	int		lines;
+	char	**map;
+
+	lines = count_lines(buf);
+	map = malloc(sizeof(char *) * (lines + 1));
+	if (!map)
+		return (NULL);
+	i = -1;
+	row = 0;
+	start = 0;
+	while (buf[++i])
+	{
+		if (buf[i] == '\n')
+		{
+			map[row++] = extract_line(buf, start, i);
+			start = i + 1;
+		}
+	}
+	if (start < i)
+		map[row++] = extract_line(buf, start, i);
+	map[row] = NULL;
+	return (map);
+}
+#include "so_long.h"
+
+int	get_map_width(char **map)
+{
+	int	width;
+
+	if (!map || !map[0])
+		return (0);
+	width = ft_strlen(map[0]);
+	return (width);
+}
+
+int	get_map_height(char **map)
+{
+	int	height;
+
+	height = 0;
+	while (map && map[height])
+		height++;
+	return (height);
+}
+#include "so_long.h"
+#include "../gnl/get_next_line_bonus.h"
+
+static int	count_lines(int fd)
+{
+	int		count;
+	char	*line;
+
+	count = 0;
+	line = get_next_line(fd);
+	while (line)
+	{
+		count++;
+		free(line);
+		line = get_next_line(fd);
+	}
+	return (count);
+}
+
+static void	remove_newline(char *str)
+{
+	int	i;
+
+	if (!str)
+		return ;
+	i = 0;
+	while (str[i])
+	{
+		if (str[i] == '\n')
+		{
+			str[i] = '\0';
+			return ;
+		}
+		i++;
+	}
+}
+
+char	**read_map_file(const char *filename)
+{
+	int		fd;
+	int		lines;
+	char	**map;
+	int		i;
+
+	fd = open(filename, O_RDONLY);
+	if (fd < 0)
+		return (NULL);
+	lines = count_lines(fd);
+	close(fd);
+	fd = open(filename, O_RDONLY);
+	if (fd < 0)
+		return (NULL);
+	map = malloc(sizeof(char *) * (lines + 1));
+	if (!map)
+		return (close(fd), NULL);
+	i = 0;
+	while (i < lines)
+	{
+		map[i] = get_next_line(fd);
+		remove_newline(map[i]);
+		i++;
+	}
+	map[i] = NULL;
+	return (close(fd), map);
+}
+
+char	**load_map(const char *filename, t_game *game)
+{
+	char	**map;
+
+	map = read_map_file(filename);
+	if (!map)
+	{
+		print_error("Failed to read map");
+		return (NULL);
+	}
+	game->map_h = get_map_height(map);
+	game->map_w = get_map_width(map);
+	return (map);
+}
+#include "so_long.h"
+
+int	can_move_to(t_game *game, int x, int y)
+{
+	if (!game || !game->map)
+		return (0);
+	if (y < 0 || x < 0 || y >= game->map_h || x >= game->map_w)
+		return (0);
+	if (game->map[y][x] == '1')
+		return (0);
+	return (1);
+}
+
+static void	handle_collectible(t_game *game, int nx, int ny)
+{
+	game->collectibles--;
+	game->map[ny][nx] = '0';
+}
+
+static int	handle_exit(t_game *game)
+{
+	if (game->collectibles == 0)
+	{
+		printf("You win in %d moves!\n", game->player.moves + 1);
+		close_game(game);
+		return (1);
+	}
+	return (0);
+}
+
+void	move_player(t_game *game, int dx, int dy)
+{
+	int		nx;
+	int		ny;
+	char	dest;
+
+	if (!game)
+		return ;
+	nx = game->player.x + dx;
+	ny = game->player.y + dy;
+	if (!can_move_to(game, nx, ny))
+		return ;
+	dest = game->map[ny][nx];
+	if (dest == 'E' && handle_exit(game))
+		return ;
+	if (dest == 'C')
+		handle_collectible(game, nx, ny);
+	if (dest != 'E')
+	{
+		game->map[game->player.y][game->player.x] = '0';
+		game->map[ny][nx] = 'P';
+		game->player.x = nx;
+		game->player.y = ny;
+	}
+	game->player.moves++;
+	printf("Moves: %d\n", game->player.moves);
+	render_game(game);
+}
+#include "so_long.h"
+
+void	load_images(t_game *game)
+{
+	int	size;
+
+	size = TILE_SIZE;
+	game->img_wall = mlx_xpm_file_to_image(game->mlx, "textures/wall.xpm",
+			&size, &size);
+	game->img_floor = mlx_xpm_file_to_image(game->mlx, "textures/ground.xpm",
+			&size, &size);
+	game->img_player = mlx_xpm_file_to_image(game->mlx, "textures/player.xpm",
+			&size, &size);
+	game->img_collect = mlx_xpm_file_to_image(game->mlx,
+			"textures/coin.xpm", &size, &size);
+	game->img_exit = mlx_xpm_file_to_image(game->mlx, "textures/exit.xpm",
+			&size, &size);
+}
+
+void	destroy_images(t_game *game)
+{
+	if (game->img_wall)
+		mlx_destroy_image(game->mlx, game->img_wall);
+	if (game->img_floor)
+		mlx_destroy_image(game->mlx, game->img_floor);
+	if (game->img_player)
+		mlx_destroy_image(game->mlx, game->img_player);
+	if (game->img_collect)
+		mlx_destroy_image(game->mlx, game->img_collect);
+	if (game->img_exit)
+		mlx_destroy_image(game->mlx, game->img_exit);
+}
+
+static void	put_tile(t_game *game, int x, int y, char c)
+{
+	void	*img;
+	int		sx;
+	int		sy;
+
+	sx = x * TILE_SIZE;
+	sy = y * TILE_SIZE;
+	img = game->img_floor;
+	if (c == '1')
+		img = game->img_wall;
+	else if (c == 'P')
+		img = game->img_player;
+	else if (c == 'C')
+		img = game->img_collect;
+	else if (c == 'E')
+		img = game->img_exit;
+	mlx_put_image_to_window(game->mlx, game->win, img, sx, sy);
+}
+
+void	render_game(t_game *game)
+{
+	int	y;
+	int	x;
+
+	if (!game || !game->map)
+		return ;
+	y = 0;
+	while (game->map[y])
+	{
+		x = 0;
+		while (game->map[y][x])
+		{
+			put_tile(game, x, y, game->map[y][x]);
+			x++;
+		}
+		y++;
+	}
+}
+#include "so_long.h"
+
+void	print_error(char *message)
+{
+	size_t	len;
+
+	len = 0;
+	if (!message)
+		return ;
+	while (message[len])
+		len++;
+	write(2, "Error\n", 6);
+	write(2, message, len);
+	write(2, "\n", 1);
+}
+
+int	ft_strcmp(char *s1, char *s2)
+{
+	int	i;
+
+	i = 0;
+	if (!s1 || !s2)
+		return (1);
+	while (s1[i] && s2[i])
+	{
+		if ((unsigned char)s1[i] != (unsigned char)s2[i])
+			return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+		i++;
+	}
+	return ((unsigned char)s1[i] - (unsigned char)s2[i]);
+}
+
+void	free_map(char **map)
+{
+	int	i;
+
+	i = 0;
+	if (!map)
+		return ;
+	while (map[i])
+	{
+		free(map[i]);
+		i++;
+	}
+	free(map);
+}
+
+size_t	ft_strlen(const char *s)
+{
+	size_t	len;
+
+	len = 0;
+	if (!s)
+		return (0);
+	while (s[len])
+		len++;
+	return (len);
+}
+#include "so_long.h"
+
+char	*ft_strchr(const char *s, int c)
+{
+	int	i;
+
+	i = 0;
+	if (!s)
+		return (NULL);
+	while (s[i])
+	{
+		if (s[i] == (char)c)
+			return ((char *)&s[i]);
+		i++;
+	}
+	if ((char)c == '\0')
+		return ((char *)&s[i]);
+	return (NULL);
+}
+
+char	*ft_strdup(const char *s)
+{
+	char	*copy;
+	size_t	i;
+	size_t	len;
+
+	i = 0;
+	len = ft_strlen(s);
+	copy = malloc(sizeof(char) * (len + 1));
+	if (!copy)
+		return (NULL);
+	while (i < len)
+	{
+		copy[i] = s[i];
+		i++;
+	}
+	copy[i] = '\0';
+	return (copy);
+}
+#include "so_long.h"
+
+void	*ft_memset(void *s, int c, size_t n)
+{
+	size_t			i;
+	unsigned char	*ptr;
+
+	ptr = (unsigned char *)s;
+	i = 0;
+	while (i < n)
+	{
+		ptr[i] = (unsigned char)c;
+		i++;
+	}
+	return (s);
+}
+
+static void	count_elements(t_game *game, t_counts *counts)
+{
+	int	y;
+	int	x;
+
+	ft_memset(counts, 0, sizeof(t_counts));
+	y = 0;
+	while (y < game->map_h)
+	{
+		x = 0;
+		while (x < game->map_w)
+		{
+			if (game->map[y][x] == 'P')
+			{
+				counts->players++;
+				game->player.x = x;
+				game->player.y = y;
+			}
+			else if (game->map[y][x] == 'E')
+				counts->exits++;
+			else if (game->map[y][x] == 'C')
+				counts->collects++;
+			x++;
+		}
+		y++;
+	}
+}
+
+int	check_counts(t_game *game)
+{
+	t_counts	counts;
+
+	count_elements(game, &counts);
+	if (counts.players != 1 || counts.exits != 1 || counts.collects < 1)
+	{
+		print_error("Map must have 1 player, 1 exit and at \
+			least 1 collectible");
+		return (0);
+	}
+	return (1);
+}
+#include "so_long.h"
+
+static int	is_exit_reachable(char **flood_map, int width, int height)
+{
+	int	y;
+	int	x;
+
+	y = 0;
+	while (y < height)
+	{
+		x = 0;
+		while (x < width)
+		{
+			if (flood_map[y][x] == 'E')
+			{
+				if ((x > 0 && flood_map[y][x - 1] == 'v')
+					|| (x < width - 1 && flood_map[y][x + 1] == 'v')
+					|| (y > 0 && flood_map[y - 1][x] == 'v')
+					|| (y < height - 1 && flood_map[y + 1][x] == 'v'))
+					return (1);
+				return (0);
+			}
+			x++;
+		}
+		y++;
+	}
+	return (0);
+}
+
+int	validate_paths(t_game *game)
+{
+	t_flood		flood;
+	t_pathcheck	p;
+
+	if (!game || !game->map)
+		return (0);
+	flood.map = dup_map(game->map);
+	if (!flood.map)
+		return (print_error("Memory allocation failed in validate_paths"), 0);
+	find_player_and_count(flood.map, &p.px, &p.py, &p.total_collects);
+	if (p.px == -1 || p.py == -1)
+	{
+		free_map(flood.map);
+		return (print_error("Player not found for flood fill"), 0);
+	}
+	flood.width = game->map_w;
+	flood.height = game->map_h;
+	ff_fill(&flood, p.px, p.py);
+	p.found_exit = is_exit_reachable(flood.map, game->map_w, game->map_h);
+	p.found_collects = count_reachable(game, flood.map);
+	game->collectibles = p.total_collects;
+	free_map(flood.map);
+	return (check_path_result(p.found_collects, p.total_collects, \
+p.found_exit));
+}
+#include "so_long.h"
+
+static int	check_valid_chars(t_game *game)
+{
+	int	y;
+	int	x;
+
+	y = 0;
+	while (game->map[y])
+	{
+		x = 0;
+		while (game->map[y][x])
+		{
+			if (game->map[y][x] != '\n' && !ft_strchr("01PEC", game->map[y][x]))
+				return (print_error("Map contains invalid characters."), 0);
+			x++;
+		}
+		y++;
+	}
+	return (1);
+}
+
+static int	check_rectangular(t_game *game)
+{
+	int	y;
+	int	len;
+	int	current_len;
+
+	len = ft_strlen(game->map[0]);
+	y = 1;
+	while (game->map[y])
+	{
+		current_len = ft_strlen(game->map[y]);
+		if (game->map[y][current_len - 1] == '\n')
+			current_len--;
+		if (current_len != len)
+			return (print_error("Map is not rectangular."), 0);
+		y++;
+	}
+	game->map_w = len;
+	game->map_h = y;
+	return (1);
+}
+
+static int	check_walls(t_game *game)
+{
+	int	x;
+	int	y;
+	int	w;
+	int	h;
+
+	w = game->map_w;
+	h = game->map_h;
+	y = -1;
+	while (++y < h)
+	{
+		x = -1;
+		while (++x < w)
+		{
+			if ((y == 0 || y == h - 1 || x == 0 || x == w - 1)
+				&& game->map[y][x] != '1')
+				return (print_error("The map is not surrounded by walls."), 0);
+		}
+	}
+	return (1);
+}
+
+int	validate_map(t_game *game)
+{
+	if (!check_rectangular(game))
+		return (0);
+	if (!check_valid_chars(game))
+		return (0);
+	if (!check_counts(game))
+		return (0);
+	if (!check_walls(game))
+		return (0);
+	if (!validate_paths(game))
+		return (0);
+	return (1);
+}
+
+
+
+# ============================================================================ #
+#                                  EXECUTABLES                                 #
+# ============================================================================ #
+
+NAME		= so_long
+NAME_BONUS	= so_long_bonus
+
+# ============================================================================ #
+#                                  COMPILATION                                 #
+# ============================================================================ #
+
+CC			= cc
+CFLAGS		= -Wall -Wextra -Werror
+RM			= rm -f
+
+# ============================================================================ #
+#                                  DIRECTORIES                                 #
+# ============================================================================ #
+
+MLX_DIR		= ./mlx
+GNL_DIR		= ./gnl
+SRC_DIR		= ./src
+SRC_BONUS_DIR = ./src_bonus
+INC_DIR		= ./includes
+
+# ============================================================================ #
+#                                    LIBRARIES                                 #
+# ============================================================================ #
+
+MLX			= $(MLX_DIR)/libmlx.a
+MLX_FLAGS	= -L$(MLX_DIR) -lmlx -lXext -lX11 -lm
+
+# ============================================================================ #
+#                              MANDATORY SOURCE FILES                          #
+# ============================================================================ #
+
+SRCS		= $(SRC_DIR)/main.c \
+			  $(SRC_DIR)/map.c \
+			  $(SRC_DIR)/map_utils.c \
+			  $(SRC_DIR)/map_split.c \
+			  $(SRC_DIR)/validate_paths.c \
+			  $(SRC_DIR)/validate.c \
+			  $(SRC_DIR)/validate_counts.c \
+			  $(SRC_DIR)/flood_fill.c \
+			  $(SRC_DIR)/hooks.c \
+			  $(SRC_DIR)/player.c \
+			  $(SRC_DIR)/render.c \
+			  $(SRC_DIR)/utils.c \
+			  $(SRC_DIR)/utils2.c
+
+GNL_SRC		= $(GNL_DIR)/get_next_line_bonus.c \
+			  $(GNL_DIR)/get_next_line_utils_bonus.c
+
+OBJS		= $(SRCS:.c=.o) $(GNL_SRC:.c=.o)
+
+# ============================================================================ #
+#                               BONUS SOURCE FILES                             #
+# ============================================================================ #
+
+SRCS_BONUS	= $(SRC_BONUS_DIR)/main_bonus.c \
+              $(SRC_BONUS_DIR)/main_utils.c \
+			  $(SRC_BONUS_DIR)/map_bonus.c \
+			  $(SRC_BONUS_DIR)/map_utils_bonus.c \
+			  $(SRC_BONUS_DIR)/map_split_bonus.c \
+			  $(SRC_BONUS_DIR)/validate_paths_bonus.c \
+			  $(SRC_BONUS_DIR)/validate_checks_bonus.c \
+			  $(SRC_BONUS_DIR)/validate_bonus.c \
+			  $(SRC_BONUS_DIR)/validate_counts_bonus.c \
+			  $(SRC_BONUS_DIR)/flood_fill_bonus.c \
+			  $(SRC_BONUS_DIR)/hooks_bonus.c \
+			  $(SRC_BONUS_DIR)/player_bonus.c \
+			  $(SRC_BONUS_DIR)/player_movement_bonus.c \
+			  $(SRC_BONUS_DIR)/render_bonus.c \
+			  $(SRC_BONUS_DIR)/render_utils.c \
+			  $(SRC_BONUS_DIR)/render_images_bonus.c \
+			  $(SRC_BONUS_DIR)/utils_bonus.c \
+			  $(SRC_BONUS_DIR)/utils2_bonus.c \
+			  $(SRC_BONUS_DIR)/animation_bonus.c \
+			  $(SRC_BONUS_DIR)/animation_utils.c \
+			  $(SRC_BONUS_DIR)/enemy_bonus.c \
+			  $(SRC_BONUS_DIR)/enemy_movement_bonus.c \
+			  $(SRC_BONUS_DIR)/ft_itoa_bonus.c \
+			  $(SRC_BONUS_DIR)/ft_strjoin_bonus.c
+
+OBJS_BONUS	= $(SRCS_BONUS:.c=.o) $(GNL_SRC:.c=.o)
+
+# ============================================================================ #
+#                                     COLORS                                   #
+# ============================================================================ #
+
+GREEN		= \033[0;32m
+YELLOW		= \033[0;33m
+RED			= \033[0;31m
+BLUE		= \033[0;34m
+CYAN		= \033[0;36m
+MAGENTA		= \033[0;35m
+RESET		= \033[0m
+BOLD		= \033[1m
+
+# ============================================================================ #
+#                                     RULES                                    #
+# ============================================================================ #
+
+all: $(NAME)
+
+$(NAME): $(OBJS) $(MLX)
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(GREEN)[Linking] $(NAME)...$(RESET)"
+	@$(CC) $(CFLAGS) $(OBJS) $(MLX_FLAGS) -o $(NAME)
+	@echo "$(BOLD)$(GREEN)✅ $(NAME) compiled successfully!$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+
+bonus: $(NAME_BONUS)
+
+$(NAME_BONUS): $(OBJS_BONUS) $(MLX)
+	@echo "$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(MAGENTA)[Linking BONUS] $(NAME_BONUS)...$(RESET)"
+	@$(CC) $(CFLAGS) $(OBJS_BONUS) $(MLX_FLAGS) -o $(NAME_BONUS)
+	@echo "$(BOLD)$(MAGENTA)✅ $(NAME_BONUS) compiled successfully!$(RESET)"
+	@echo "$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+
+$(MLX):
+	@echo "$(YELLOW)[Building] MLX library...$(RESET)"
+	@$(MAKE) -C $(MLX_DIR) 2>&1 | grep -v "ignoring return value" || true
+	@echo "$(GREEN)✅ MLX library built!$(RESET)"
+
+# Regra para compilar objetos do mandatório
+$(SRC_DIR)/%.o: $(SRC_DIR)/%.c
+	@$(CC) $(CFLAGS) -I$(INC_DIR) -I$(MLX_DIR) -I$(GNL_DIR) -c $< -o $@
+	@echo "$(CYAN)[Compiling]$(RESET) $<"
+
+# Regra para compilar objetos do bônus
+$(SRC_BONUS_DIR)/%.o: $(SRC_BONUS_DIR)/%.c
+	@$(CC) $(CFLAGS) -I$(INC_DIR) -I$(MLX_DIR) -I$(GNL_DIR) -c $< -o $@
+	@echo "$(MAGENTA)[Compiling BONUS]$(RESET) $<"
+
+# Regra para compilar GNL
+$(GNL_DIR)/%.o: $(GNL_DIR)/%.c
+	@$(CC) $(CFLAGS) -I$(GNL_DIR) -c $< -o $@
+	@echo "$(BLUE)[Compiling GNL]$(RESET) $<"
+
+clean:
+	@$(RM) $(OBJS) $(OBJS_BONUS)
+	@echo "$(YELLOW)🧹 Object files removed.$(RESET)"
+
+fclean: clean
+	@$(RM) $(NAME) $(NAME_BONUS)
+	@$(MAKE) -C $(MLX_DIR) clean --no-print-directory 2>/dev/null || true
+	@echo "$(RED)🗑️  Executables and MLX library removed.$(RESET)"
+
+re: fclean all
+
+re_bonus: fclean bonus
+
+# ============================================================================ #
+#                                  UTILITY RULES                               #
+# ============================================================================ #
+
+run: all
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(GREEN)🎮 Running $(NAME)...$(RESET)"
+	@echo "$(GREEN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@./$(NAME) maps/mapa.ber
+
+run_bonus: bonus
+	@echo "$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(MAGENTA)🎮 Running $(NAME_BONUS)...$(RESET)"
+	@echo "$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@./$(NAME_BONUS) maps/bonus_simple.ber
+
+norm:
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(BLUE)📋 Norminette Check$(RESET)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@norminette $(SRC_DIR) $(SRC_BONUS_DIR) $(INC_DIR) $(GNL_DIR) | grep -v "OK!" || echo "$(GREEN)✅ All files OK!$(RESET)"
+
+# Testa vários mapas
+test: all
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(CYAN)🧪 Testing maps...$(RESET)"
+	@echo "$(CYAN)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@for map in maps/*.ber; do \
+		echo "$(YELLOW)Testing: $$map$(RESET)"; \
+		./$(NAME) $$map || true; \
+	done
+
+test_bonus: bonus
+	@echo "$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(MAGENTA)🧪 Testing bonus maps...$(RESET)"
+	@echo "$(MAGENTA)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@for map in maps/bonus*.ber; do \
+		echo "$(YELLOW)Testing: $$map$(RESET)"; \
+		./$(NAME_BONUS) $$map || true; \
+	done
+
+# Valgrind para detectar leaks
+valgrind: all
+	@echo "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(RED)🔍 Running Valgrind...$(RESET)"
+	@echo "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+		./$(NAME) maps/mapa.ber
+
+valgrind_bonus: bonus
+	@echo "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(RED)🔍 Running Valgrind on BONUS...$(RESET)"
+	@echo "$(RED)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
+		./$(NAME_BONUS) maps/bonus_simple.ber
+
+help:
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(BOLD)$(CYAN)📖 So_long Makefile Commands$(RESET)"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+	@echo "$(GREEN)make$(RESET)              - Compile mandatory"
+	@echo "$(MAGENTA)make bonus$(RESET)        - Compile bonus"
+	@echo "$(YELLOW)make clean$(RESET)        - Remove object files"
+	@echo "$(RED)make fclean$(RESET)       - Remove objects and executables"
+	@echo "$(CYAN)make re$(RESET)           - Recompile mandatory"
+	@echo "$(MAGENTA)make re_bonus$(RESET)     - Recompile bonus"
+	@echo "$(GREEN)make run$(RESET)          - Compile and run mandatory"
+	@echo "$(MAGENTA)make run_bonus$(RESET)    - Compile and run bonus"
+	@echo "$(BLUE)make norm$(RESET)         - Check norminette"
+	@echo "$(CYAN)make test$(RESET)         - Test all maps (mandatory)"
+	@echo "$(MAGENTA)make test_bonus$(RESET)   - Test all bonus maps"
+	@echo "$(RED)make valgrind$(RESET)     - Run with valgrind (mandatory)"
+	@echo "$(RED)make valgrind_bonus$(RESET) - Run with valgrind (bonus)"
+	@echo "$(BLUE)make help$(RESET)         - Show this help"
+	@echo "$(BLUE)━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━$(RESET)"
+
+.PHONY: all bonus clean fclean re re_bonus run run_bonus norm test test_bonus \
+		valgrind valgrind_bonus help

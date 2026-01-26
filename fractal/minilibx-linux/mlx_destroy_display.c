@@ -1,28 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   exit_game.c                                        :+:      :+:    :+:   */
+/*   mlx_destroy_display.c                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: grodrig2 <grodrig2@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mg <mg@student.42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/01/26 10:51:24 by grodrig2          #+#    #+#             */
-/*   Updated: 2026/01/26 10:51:25 by grodrig2         ###   ########.fr       */
+/*   Created: 2020/10/03 18:56:35 by mg                #+#    #+#             */
+/*   Updated: 2020/10/04 01:55:35 by mg               ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "so_long.h"
+#include "mlx_int.h"
 
-void	exit_game(t_game *g)
+int	mlx_destroy_display(t_xvar *xvar)
 {
-	destroy_textures(g);
-	if (g->win)
-		mlx_destroy_window(g->mlx, g->win);
-	free_map(&g->map);
-	exit(0);
-}
-
-int	handle_close(t_game *g)
-{
-	exit_game(g);
-	return (0);
+	XCloseDisplay(xvar->display);
 }
