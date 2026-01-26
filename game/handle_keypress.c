@@ -12,9 +12,6 @@
 
 #include "so_long.h"
 
-
-
-
 int	handle_keypress(int keycode, t_game *g)
 {
 	if (keycode == KEY_W || keycode == KEY_UP)

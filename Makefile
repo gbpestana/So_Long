@@ -42,7 +42,7 @@ clean:
 	@make -C $(LIBFT_DIR) clean > /dev/null 2>&1
 
 fclean: clean
-	@echo "=.=.=.=.= CLEAR ALL =.=.=.=.="
+	@echo "=.=.= CLEAR ALL =.=.="
 	@rm -f $(NAME)
 	@make -C $(LIBFT_DIR) fclean > /dev/null 2>&1
 

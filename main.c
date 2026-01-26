@@ -33,15 +33,13 @@ void	init_game(t_game *g)
 {
 	g->moves = 0;
 	g->collected = 0;
+	g->speed = 10;
 	g->frame_count = 0;
-	g->speed = 6;
+	g->input.up = 0;
+	g->input.down = 0;
+	g->input.left = 0;
+	g->input.right = 0;
 }
-
-// void	init_game(t_game *game)
-// {
-// 	game->collected = 0;
-// 	game->moves = 0;
-// }
 
 int	main(int argc, char **argv)
 {
@@ -52,6 +50,7 @@ int	main(int argc, char **argv)
 		print_error("Usage: ./so_long <map.ber>");
 		return (1);
 	}
+	ft_bzero(&game, sizeof(t_game));
 	if (!parse_map(argv[1], &game))
 	{
 		print_error("Map validation failed!");
@@ -61,6 +60,7 @@ int	main(int argc, char **argv)
 	game.win = mlx_new_window(game.mlx, game.map.width * TILE_SIZE, game.map.height * TILE_SIZE, "so_long");
 	load_textures(&game);
 	render_map(&game);
+	init_game(&game);
 	mlx_hook(game.win, 2, 1L << 0, handle_keypress, &game);
 	mlx_hook(game.win, 3, 1L << 1, handle_keyrelease, &game);
 	mlx_loop_hook(game.mlx, game_loop, &game);

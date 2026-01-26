@@ -2,16 +2,7 @@
 
 void	exit_game(t_game *g)
 {
-	if (g->tex.wall)
-		mlx_destroy_image(g->mlx, g->tex.wall);
-	if (g->tex.floor)
-		mlx_destroy_image(g->mlx, g->tex.floor);
-	if (g->tex.player)
-		mlx_destroy_image(g->mlx, g->tex.player);
-	if (g->tex.collectible)
-		mlx_destroy_image(g->mlx, g->tex.collectible);
-	if (g->tex.exit)
-		mlx_destroy_image(g->mlx, g->tex.exit);
+	destroy_textures(g);
 	if (g->win)
 		mlx_destroy_window(g->mlx, g->win);
 	free_map(&g->map);
